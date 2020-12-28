@@ -15,6 +15,7 @@
 
 
 uint8_t  indiceConversioniADC=0;
+
 //inserire i canali  connessi da convertire;  MAX_INDEX_ADC_CH è l'indice massimo valido
 uint32_t CanaliADC[MAX_ADC_CH+1]={ADC_CHANNEL_1,ADC_CHANNEL_VREFINT};
 //nella prima posizione mettere il primo canale da convertire
