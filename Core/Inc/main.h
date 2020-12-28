@@ -32,15 +32,35 @@ void Error_Handler(void);
 #define SWCLK_GPIO_Port GPIOA
 
 /* ADC definitions*/
-#define CALIBRATION_TIME 180000
+//#define CALIBRATION_TIME 180000
 #define MAX_ADC_CH 1
-#define NO_ERRORS_ADC 6000
-#define DELTA 3
+//#define NO_ERRORS_ADC 6000
+//#define DELTA 3
 #define VREFINT_CAL_ADDR                0x1FFFF7BA  /* datasheet p. 19 */
 #define VREFINT_CAL_ADDR_B                0x1FFFF7BB  /* datasheet p. 19 */
 #define VREFINT_CAL ((uint16_t*) VREFINT_CAL_ADDR)
 #define VREFINT_CAL_B ((uint16_t*) VREFINT_CAL_ADDR_B)
 #define VREFINT 1.2
+
+// Conditional compile directives
+#define POWER DC
+
+// The power is a battery (DC, low Noise) or other (high noise)
+#if POWER == DC
+
+#define CALIBRATION_TIME 10000
+#define NO_ERRORS_ADC 6000
+#define DELTA 3
+#define LONG_N 32 // Numero di samples
+#define SHORT_N 16
+#else
+#define CALIBRATION_TIME 180000
+#define NO_ERRORS_ADC 10000
+#define DELTA 5
+#define LONG_N 128 // Numero di samples
+#define SHORT_N 64
+#endif
+
 
 #ifdef __cplusplus
 }

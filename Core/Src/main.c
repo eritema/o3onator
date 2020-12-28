@@ -13,9 +13,12 @@ int errors=0;
 int ritardo=NO_ERRORS_ADC;
 
 
-uint8_t long_n=128; // Numero di samples
-uint8_t short_n=24;
+//uint8_t long_n=128; // Numero di samples
+//uint8_t short_n=24;
+
 uint8_t calibrated=0;
+
+// Counter decresaed each time SysTick_Handler(void) is called
 uint16_t warmup_time=CALIBRATION_TIME;
 
 
@@ -56,13 +59,13 @@ int main(void)
   HAL_TIM_OC_Stop_IT(&htim14, TIM_CHANNEL_1);
   HAL_ADC_Start_IT(&hadc);
 
-  //int average_long[long_n];
-  int average_short[short_n];
+  //int average_long[LONG_N];
+  int average_short[SHORT_N];
 
-  /*for(t=0;t<long_n;t++) {
+  /*for(t=0;t<LONG_N;t++) {
   			  average_long[t]=0;
   }
-  for(t=0;t<short_n;t++) {
+  for(t=0;t<SHORT_N;t++) {
     			  average_long[t]=0;
     }*/
   long_time=0;
@@ -74,13 +77,13 @@ int main(void)
 //	  vref= *((uint16_t*)VREFINT_CAL_ADDR);
 	  if(DatoADCpronto) {
 		  DatoADCpronto=0;
-		  (long_time >= long_n) ? long_time=0 : long_time++ ;
+		  (long_time >= LONG_N) ? long_time=0 : long_time++ ;
 		  //average_long[long_time]=DatiADC[0];
-		  //longAvg=average(average_long,long_n);
+		  //longAvg=average(average_long,LONG_N);
 		  //voltage_long=longAvg*0.0008;
-		  (short_time >= short_n) ? short_time=0 : short_time++ ;
+		  (short_time >= SHORT_N) ? short_time=0 : short_time++ ;
 		  average_short[short_time]=DatiADC[0];
-		  shortAvg=average(average_short,short_n);
+		  shortAvg=average(average_short,SHORT_N);
 		  voltage_short=shortAvg*0.0008;
 		  //voltage1=DatiADC[0]*(1.23/DatiADC[1]); //Vrefind table datasheet 6.3.4
 
