@@ -42,6 +42,8 @@ void Error_Handler(void);
 #define VREFINT_CAL ((uint16_t*) VREFINT_CAL_ADDR)
 #define VREFINT_CAL_B ((uint16_t*) VREFINT_CAL_ADDR_B)
 #define VREFINT 1.2
+#define OZONE_THR 2500
+#define DELTA_SAMPLING 1000
 
 // Conditional compile directives
 #define POWER DC
@@ -49,17 +51,25 @@ void Error_Handler(void);
 // The power is a battery (DC, low Noise) or other (high noise)
 #if POWER == DC
 
-#define CALIBRATION_TIME 10000
-#define NO_ERRORS_ADC 6000
+#define CALIBRATION_TIME 5000
+#define ERRORS_ADC 3000
 #define DELTA 3
 #define LONG_N 32 // Numero di samples
 #define SHORT_N 16
+#define VENTOLA_TIME 1000
+#define STABILIZATION_TIME 500
+#define AVERAGE_SAMPLE 5
+
 #else
 #define CALIBRATION_TIME 180000
-#define NO_ERRORS_ADC 10000
+#define ERRORS_ADC 10000
 #define DELTA 5
 #define LONG_N 128 // Numero di samples
 #define SHORT_N 64
+#define VENTOLA_TIME 10000
+#define STABILIZATION_TIME 5000
+#define AVERAGE_SAMPLE 40
+
 #endif
 
 

@@ -31,7 +31,7 @@ extern int ritardo;
 extern int accensioni;
 extern uint16_t warmup_time;
 extern uint8_t calibrated;
-
+extern uint8_t mode;
 
 int GO_BOTTONE=1;
 
@@ -46,16 +46,17 @@ enum STATI_RELE{
 };
 
 enum O3_VALUES{
-	O3_LOW=100,
-	O3_MED=300,
-	O3_HI=1000
+	O3_LOW=500,
+	O3_MED=1000,
+	O3_HI=2000
 };
+
 enum STATI_RELE ventola,ozono;
 enum STATI_LED led0;
 
 uint32_t o3;
 int counting=0;
-uint8_t mode;
+
 
 /******************************************************************************/
 /*           Cortex-M0 Processor Interruption and Exception Handlers          */ 
@@ -127,9 +128,10 @@ void SysTick_Handler(void)
 		  calibrated=1;
 	  else {
 		  errors=0;			// reset error counter
-	      ritardo=NO_ERRORS_ADC; //
+	      ritardo=ERRORS_ADC; //
 	  }
   }
+
 }
 
 /******************************************************************************/
@@ -197,21 +199,23 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	  		  //ozono=ON;
 	  		  //HAL_GPIO_WritePin(OzoneCtrl_GPIO_Port,OzoneCtrl_Pin,led1);
 	  		  if(mode==1) {
-
+	  			//HAL_TIM_OC_Stop(&htim3, TIM_CHANNEL_1);
 	  			htim3.Instance -> CCR1 = O3_LOW;
-//	  			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+	  			//HAL_TIM_OC_Start(&htim3, TIM_CHANNEL_1);
 //	  			__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,O3_LOW);
 //	  			HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 	  			counting=1;
 	  		  } else if(mode==2) {
+	  			//HAL_TIM_OC_Stop(&htim3, TIM_CHANNEL_1);
 	  			  htim3.Instance -> CCR1 = O3_MED;
-//	  			  HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+	  			  //HAL_TIM_OC_Start(&htim3, TIM_CHANNEL_1);
 //	  			  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,O3_MED);
 //	  		      HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 	  			  counting=1;
 	  		  } else if(mode==3) {
+	  			//HAL_TIM_OC_Stop(&htim3, TIM_CHANNEL_1);
 	  			  htim3.Instance -> CCR1 = O3_HI;
-//	  			  HAL_TIM_PWM_Stop_IT(&htim3, TIM_CHANNEL_1);
+	  			  //HAL_TIM_OC_Start(&htim3, TIM_CHANNEL_1);
 //	  			  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,O3_HI);
 //	  		      HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1);
 
