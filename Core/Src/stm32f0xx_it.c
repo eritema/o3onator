@@ -25,13 +25,37 @@
 /* External variables --------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc;
 extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim14;
 
 extern int stato;
 extern int ritardo;
 extern int accensioni;
 extern uint16_t warmup_time;
 extern uint8_t calibrated;
+
+
+int GO_BOTTONE=1;
+
+enum STATI_LED{
+	ON_LED=1,
+	OFF_LED=0
+};
+
+enum STATI_RELE{
+	ON=0,
+	OFF=1
+};
+
+enum O3_VALUES{
+	O3_LOW=100,
+	O3_MED=300,
+	O3_HI=1000
+};
+enum STATI_RELE ventola,ozono;
+enum STATI_LED led0;
+
+uint32_t o3;
+int counting=0;
+uint8_t mode;
 
 /******************************************************************************/
 /*           Cortex-M0 Processor Interruption and Exception Handlers          */ 
@@ -115,6 +139,17 @@ void SysTick_Handler(void)
 /* please refer to the startup file (startup_stm32f0xx.s).                    */
 /******************************************************************************/
 
+void EXTI2_3_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI2_3_IRQn 0 */
+
+  /* USER CODE END EXTI2_3_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+  /* USER CODE BEGIN EXTI2_3_IRQn 1 */
+
+  /* USER CODE END EXTI2_3_IRQn 1 */
+}
+
 /**
   * @brief This function handles ADC interrupt.
   */
@@ -146,18 +181,112 @@ void TIM3_IRQHandler(void)
 /**
   * @brief This function handles TIM14 global interrupt.
   */
-void TIM14_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM14_IRQn 0 */
-
-  /* USER CODE END TIM14_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim14);
-  /* USER CODE BEGIN TIM14_IRQn 1 */
-
-  /* USER CODE END TIM14_IRQn 1 */
-}
 
 /* USER CODE BEGIN 1 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  /* Prevent unused argument(s) compilation warning */
+  //UNUSED(GPIO_Pin);
+  if (GPIO_Pin==BUTTON_Pin) {
+	  if(mode>=3) mode=0;
+	  else mode++;
+	  if(mode>0) {
+		  	  HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,1);
+		  	  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	  		  //led1=ON_LED;
+	  		  //ozono=ON;
+	  		  //HAL_GPIO_WritePin(OzoneCtrl_GPIO_Port,OzoneCtrl_Pin,led1);
+	  		  if(mode==1) {
+
+	  			htim3.Instance -> CCR1 = O3_LOW;
+//	  			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+//	  			__HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,O3_LOW);
+//	  			HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	  			counting=1;
+	  		  } else if(mode==2) {
+	  			  htim3.Instance -> CCR1 = O3_MED;
+//	  			  HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+//	  			  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,O3_MED);
+//	  		      HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	  			  counting=1;
+	  		  } else if(mode==3) {
+	  			  htim3.Instance -> CCR1 = O3_HI;
+//	  			  HAL_TIM_PWM_Stop_IT(&htim3, TIM_CHANNEL_1);
+//	  			  __HAL_TIM_SET_COMPARE(&htim3,TIM_CHANNEL_1,O3_HI);
+//	  		      HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1);
+
+	  			  counting=1;
+	  		  }
+	  } else {
+		  	  HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
+		  	  htim3.Instance -> CCR1 = 0;
+	  		  //led1=OFF_LED;
+	  		  //ozono=OFF;
+	  		  //HAL_GPIO_WritePin(OzoneCtrl_GPIO_Port,OzoneCtrl_Pin,led1);
+	  		  //HAL_TIM_OC_Stop_IT(&htim3, TIM_CHANNEL_1);
+	  		  counting=0;
+	  		  mode=0;
+	  }
+  }
+  /*if (GPIO_Pin==BUTTON_Pin) {
+	  GO_BOTTONE=0;
+	  if (ventola==OFF) {
+		ventola=ON;
+		led0=ON_LED;
+		ozono=OFF;
+		led1=OFF_LED;
+		counting=0;
+		mode=0;
+	    HAL_GPIO_WritePin(LED0_GPIO_Port,LED0_Pin,led0);
+	    HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,ventola);
+	  }
+	  else {
+		ventola=OFF;
+		ozono=OFF;
+		led0=OFF_LED;
+		led1=OFF_LED;
+		counting=0;
+		mode=0;
+		HAL_GPIO_WritePin(LED0_GPIO_Port,LED0_Pin,led0);
+	    HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,ventola);
+	    HAL_TIM_OC_Stop_IT(&htim2, TIM_CHANNEL_1);
+	  }
+	  HAL_GPIO_WritePin(OzoneCtrl_GPIO_Port,OzoneCtrl_Pin,led1);
+  } else if ((GPIO_Pin==MODE_Pin)&&(ventola==ON)&&(GO_BOTTONE)) {
+	  GO_BOTTONE=0;
+	  if(mode>=3) mode=0;
+	  else mode++;
+	  if(mode>0) {
+		  led1=ON_LED;
+		  ozono=ON;
+		  HAL_GPIO_WritePin(OzoneCtrl_GPIO_Port,OzoneCtrl_Pin,led1);
+		  if(mode==1) {
+			  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,O3_LOW);
+			HAL_TIM_OC_Stop(&htim2, TIM_CHANNEL_1);
+			HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
+
+			  counting=1;
+		  } else if(mode==2) {
+			  HAL_TIM_OC_Stop(&htim2, TIM_CHANNEL_1);
+		      HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
+			  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,O3_MED);
+			  counting=1;
+		  } else if(mode==3) {
+			  HAL_TIM_OC_Stop_IT(&htim2, TIM_CHANNEL_1);
+		      HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);
+			  __HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,O3_HI);
+			  counting=1;
+		  }
+	  } else {
+		  led1=OFF_LED;
+		  ozono=OFF;
+		  HAL_GPIO_WritePin(OzoneCtrl_GPIO_Port,OzoneCtrl_Pin,led1);
+		  HAL_TIM_OC_Stop_IT(&htim2, TIM_CHANNEL_1);
+		  counting=0;
+		  mode=0;
+	  }
+  }*/
+}
 
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

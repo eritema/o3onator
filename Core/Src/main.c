@@ -4,7 +4,6 @@
 /* Variabili esportate*/
 ADC_HandleTypeDef hadc;
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim14;
 
 int DatoADCpronto;
 int DatiADC[MAX_ADC_CH+1];
@@ -44,7 +43,6 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC_Init(void);
 static void MX_TIM3_Init(void);
-static void MX_TIM14_Init(void);
 
 
 int main(void)
@@ -55,14 +53,12 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC_Init();
   MX_TIM3_Init();
-  MX_TIM14_Init();
-  HAL_TIM_OC_Stop_IT(&htim14, TIM_CHANNEL_1);
   HAL_ADC_Start_IT(&hadc);
 
-  //int average_long[LONG_N];
+  int average_long[LONG_N];
   int average_short[SHORT_N];
 
-  /*for(t=0;t<LONG_N;t++) {
+/*  for(t=0;t<LONG_N;t++) {
   			  average_long[t]=0;
   }
   for(t=0;t<SHORT_N;t++) {
@@ -71,6 +67,9 @@ int main(void)
   long_time=0;
   short_time=0;
   voltage_long=0;
+  HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
+  //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
   while (1)
   {
@@ -78,8 +77,8 @@ int main(void)
 	  if(DatoADCpronto) {
 		  DatoADCpronto=0;
 		  (long_time >= LONG_N) ? long_time=0 : long_time++ ;
-		  //average_long[long_time]=DatiADC[0];
-		  //longAvg=average(average_long,LONG_N);
+		  average_long[long_time]=DatiADC[0];
+		  longAvg=average(average_long,LONG_N);
 		  //voltage_long=longAvg*0.0008;
 		  (short_time >= SHORT_N) ? short_time=0 : short_time++ ;
 		  average_short[short_time]=DatiADC[0];
@@ -108,9 +107,9 @@ int main(void)
 			  //HAL_GPIO_WritePin(STAUS_LED2_GPIO_Port,STAUS_LED2_Pin,0);
 		  }
 		  //HAL_Delay(100);
-		  __HAL_TIM_SET_COMPARE(&htim14,TIM_CHANNEL_1,DatiADC[1]);
-		  HAL_TIM_OC_Stop(&htim14, TIM_CHANNEL_1);
-		  HAL_TIM_OC_Start(&htim14, TIM_CHANNEL_1);
+		  //__HAL_TIM_SET_COMPARE(&htim14,TIM_CHANNEL_1,DatiADC[1]);
+		  //HAL_TIM_OC_Stop(&htim14, TIM_CHANNEL_1);
+		  //HAL_TIM_OC_Start(&htim14, TIM_CHANNEL_1);
 		  HAL_ADC_Start_IT(&hadc);
 	  }
   }
@@ -193,12 +192,20 @@ static void MX_ADC_Init(void)
   */
 static void MX_TIM3_Init(void)
 {
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 40000-1;
+  htim3.Init.Prescaler = 8000-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 1000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -223,49 +230,25 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 500;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
+  sConfigOC.Pulse = 500;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
+
 }
 
-/**
-  * @brief TIM14 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM14_Init(void)
-{
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  htim14.Instance = TIM14;
-  htim14.Init.Prescaler = 8-1;
-  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim14.Init.Period = 4000;
-  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim14) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim14, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  HAL_TIM_MspPostInit(&htim14);
-}
 
 /**
   * @brief GPIO Initialization Function
@@ -301,9 +284,13 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : BUTTON_Pin */
   GPIO_InitStruct.Pin = BUTTON_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BUTTON_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_3_IRQn, 4, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
 
 }
 

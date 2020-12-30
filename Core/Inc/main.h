@@ -18,13 +18,14 @@ void Error_Handler(void);
 #define STATUS_LED1_GPIO_Port GPIOF
 #define STAUS_LED2_Pin GPIO_PIN_1
 #define STAUS_LED2_GPIO_Port GPIOF
-#define VENTOLA_Pin GPIO_PIN_0
+#define VENTOLA_Pin GPIO_PIN_5
 #define VENTOLA_GPIO_Port GPIOA
 #define BUTTON_Pin GPIO_PIN_2
 #define BUTTON_GPIO_Port GPIOA
-#define OZONATORE_Pin GPIO_PIN_6
+#define BUTTON_EXTI_IRQn EXTI2_3_IRQn
+#define OZONATORE_Pin GPIO_PIN_7 //tim3
 #define OZONATORE_GPIO_Port GPIOA
-#define CTRL_LED_Pin GPIO_PIN_7
+#define CTRL_LED_Pin GPIO_PIN_6 //tim3
 #define CTRL_LED_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
