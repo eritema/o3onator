@@ -193,7 +193,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	  if(mode>=3) mode=0;
 	  else mode++;
 	  if(mode>0) {
-		  	  HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,1);
+		  	  //HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,1);
 		  	  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 	  		  //led1=ON_LED;
 	  		  //ozono=ON;
@@ -222,7 +222,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	  			  counting=1;
 	  		  }
 	  } else {
-		  	  HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
+		  	  //HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
 		  	  htim3.Instance -> CCR1 = 0;
 	  		  //led1=OFF_LED;
 	  		  //ozono=OFF;

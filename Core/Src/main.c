@@ -9,65 +9,12 @@ int DatoADCpronto;
 int DatiADC[MAX_ADC_CH+1];
 int errors=0;
 uint8_t mode=0;
-
 int ritardo=ERRORS_ADC;
-
-
-//uint8_t long_n=128; // Numero di samples
-//uint8_t short_n=24;
-
 uint8_t calibrated=0;
+float prevAvg;
 
 // Counter decresaed each time SysTick_Handler(void) is called
 uint16_t warmup_time=CALIBRATION_TIME;
-
-
-int long_time,short_time;
-float voltage_long,voltage_short;
-
-float longAvg,shortAvg;
-
-
-float average(int *array,int t) {
-	int i;
-	int sum=0;
-	for(i=0;i<t;i++)
-		sum += array[i];
-	return sum/t;
-}
-
-void VENTOLA_run(void){
-	HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,1);
-	HAL_Delay(VENTOLA_TIME);
-	HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
-}
-
-float ADC_AVERAGE_Value() {
-	uint8_t i=0;
-	int adc_value[AVERAGE_SAMPLE];
-	float avg;
-	HAL_ADC_Start_IT(&hadc);
-	HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
-	while(i<AVERAGE_SAMPLE){
-		if(DatoADCpronto) {
-			  DatoADCpronto=0;
-			  adc_value[i++]=DatiADC[0];
-			  HAL_Delay(DELTA_SAMPLING);
-			  HAL_ADC_Start_IT(&hadc);
-		}
-	}
-	HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,0);
-	avg=average(adc_value,AVERAGE_SAMPLE);
-	return(avg);
-}
-
-void OZONE_Pulse() {
-	HAL_GPIO_WritePin(OZONATORE_GPIO_Port,OZONATORE_Pin,1);
-	HAL_Delay(500);
-	HAL_GPIO_WritePin(OZONATORE_GPIO_Port,OZONATORE_Pin,0);
-}
-
-/* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -75,6 +22,12 @@ static void MX_GPIO_Init(void);
 static void MX_ADC_Init(void);
 static void MX_TIM3_Init(void);
 
+uint16_t getMode(void);
+float average(uint16_t *array,uint16_t t);
+void SENSOR_Calibrate(uint16_t short_n);
+void VENTOLA_run(uint32_t delay);
+float ADC_AVERAGE_Value(uint32_t delta_sampling,uint16_t average_sample);
+void OZONE_Pulse(uint32_t pulse_time);
 
 int main(void)
 {
@@ -86,80 +39,122 @@ int main(void)
   MX_TIM3_Init();
   HAL_ADC_Start_IT(&hadc);
 
-  int average_long[LONG_N];
-  int average_short[SHORT_N];
-
-/*  for(t=0;t<LONG_N;t++) {
-  			  average_long[t]=0;
-  }
-  for(t=0;t<SHORT_N;t++) {
-    			  average_long[t]=0;
-    }*/
-  long_time=0;
-  short_time=0;
-  voltage_long=0;
+  prevAvg=0;
   HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
-  //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
-  while (!calibrated)
-  {
-//	  vref= *((uint16_t*)VREFINT_CAL_ADDR);
-	  if(DatoADCpronto) {
-		  DatoADCpronto=0;
-		  (long_time >= LONG_N) ? long_time=0 : long_time++ ;
-		  average_long[long_time]=DatiADC[0];
-		  longAvg=average(average_long,LONG_N);
-		  //voltage_long=longAvg*0.0008;
-		  (short_time >= SHORT_N) ? short_time=0 : short_time++ ;
-		  average_short[short_time]=DatiADC[0];
-		  shortAvg=average(average_short,SHORT_N);
-		  voltage_short=shortAvg*0.0008;
-		  //voltage1=DatiADC[0]*(1.23/DatiADC[1]); //Vrefind table datasheet 6.3.4
-		  if (DatiADC[0]>4090) { //
-			  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
-			  //HAL_GPIO_WritePin(STAUS_LED2_GPIO_Port,STAUS_LED2_Pin,0);
-			  errors++;
-	  	  } else if(shortAvg>voltage_long+DELTA) {
-			  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
-			  //HAL_GPIO_WritePin(STAUS_LED2_GPIO_Port,STAUS_LED2_Pin,0);
-			  voltage_long=shortAvg;
-			  errors++;
-		  } else if(shortAvg<voltage_long-DELTA ){
-			  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
-			  //HAL_GPIO_WritePin(STAUS_LED2_GPIO_Port,STAUS_LED2_Pin,1);
-			  voltage_long=shortAvg;
-			  errors++;
-		  } else {
-			  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,0);
-			  //HAL_GPIO_WritePin(STAUS_LED2_GPIO_Port,STAUS_LED2_Pin,0);
-		  }
-		  //HAL_Delay(100);
-		  //__HAL_TIM_SET_COMPARE(&htim14,TIM_CHANNEL_1,DatiADC[1]);
-		  //HAL_TIM_OC_Stop(&htim14, TIM_CHANNEL_1);
-		  //HAL_TIM_OC_Start(&htim14, TIM_CHANNEL_1);
-		  HAL_ADC_Start_IT(&hadc);
-	  }
-  }
+  SENSOR_Calibrate(SHORT_N);
 
   HAL_ADC_Stop_IT(&hadc);
   HAL_GPIO_TogglePin(STAUS_LED2_GPIO_Port,STAUS_LED2_Pin);
 
   while(1){
-	  VENTOLA_run();
-	  HAL_Delay(STABILIZATION_TIME);
-	  if(ADC_AVERAGE_Value() < OZONE_THR) {
-		  OZONE_Pulse();
+	  VENTOLA_run(VENTOLA_TIME); // Avvia la ventola della camera di misura per VENTOLA_TIME ms
+	  HAL_Delay(STABILIZATION_TIME); // Attendi STABILIZATION_TIME ms prima di leggere
+	  if(ADC_AVERAGE_Value(DELTA_SAMPLING,AVERAGE_SAMPLE) < OZONE_THR) { // se non c'e' sufficiente Ozono
+		  OZONE_Pulse(getMode()); // attiva generatore per un tempo determinato dallo stato del sistema
 	  } else {
-		  HAL_Delay(500);
+		  HAL_Delay(getMode());
 	  }
   }
-
-
 }
 
 
+uint16_t getMode() {
+	switch(mode) {
+	case 0:
+		return(0);
+		break;
+	case 1:
+		return(500);
+		break;
+	case 2:
+		return(1000);
+		break;
+	case 3:
+		return(2000);
+		break;
+	default:
+		return(0);
+	}
+}
 
+float average(uint16_t *array,uint16_t t) {
+	int i;
+	int sum=0;
+	for(i=0;i<t;i++)
+		sum += array[i];
+	return sum/t;
+}
+
+void SENSOR_Calibrate(uint16_t short_n) {
+
+	uint16_t average_short[short_n];
+	uint32_t short_time=0;
+	float shortAvg;
+
+	while (!calibrated)
+	  {
+	//	  vref= *((uint16_t*)VREFINT_CAL_ADDR);
+
+		  if(DatoADCpronto) {
+			  DatoADCpronto=0;
+
+			  (short_time >= short_n) ? short_time=0 : short_time++ ;
+			  average_short[short_time]=DatiADC[0];
+			  shortAvg=average(average_short,short_n);
+
+			  //voltage1=DatiADC[0]*(1.23/DatiADC[1]); //Vrefind table datasheet 6.3.4
+
+			  if (DatiADC[0]>4090) {
+				  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
+				  errors++;
+		  	  } else if(shortAvg>prevAvg+DELTA) {
+				  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
+				  prevAvg=shortAvg;
+				  errors++;
+			  } else if(shortAvg<prevAvg-DELTA ){
+				  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
+				  prevAvg=shortAvg;
+				  errors++;
+			  } else {
+				  HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,0);
+			  }
+			  HAL_ADC_Start_IT(&hadc);
+		  }
+	  }
+}
+
+
+void VENTOLA_run(uint32_t delay){
+	HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,1);
+	HAL_Delay(delay);
+	HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
+}
+
+float ADC_AVERAGE_Value(uint32_t delta_sampling,uint16_t average_sample) {
+	uint8_t i=0;
+	uint16_t adc_value[average_sample];
+	float avg;
+	HAL_ADC_Start_IT(&hadc);
+	HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,1);
+	while(i<average_sample){
+		if(DatoADCpronto) {
+			  DatoADCpronto=0;
+			  adc_value[i++]=DatiADC[0];
+			  HAL_Delay(delta_sampling);
+			  HAL_ADC_Start_IT(&hadc);
+		}
+	}
+	HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,0);
+	avg=average(adc_value,average_sample);
+	return(avg);
+}
+
+void OZONE_Pulse(uint32_t pulse_time) {
+	HAL_GPIO_WritePin(OZONATORE_GPIO_Port,OZONATORE_Pin,1);
+	HAL_Delay(pulse_time);
+	HAL_GPIO_WritePin(OZONATORE_GPIO_Port,OZONATORE_Pin,0);
+}
 
 /**
   * @brief System Clock Configuration
