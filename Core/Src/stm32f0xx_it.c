@@ -189,7 +189,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   /* Prevent unused argument(s) compilation warning */
   //UNUSED(GPIO_Pin);
-  if (GPIO_Pin==BUTTON_Pin) {
+  if (GPIO_Pin==BUTTON_Pin && calibrated) {
 	  if(mode>=3) mode=0;
 	  else mode++;
 	  if(mode>0) {

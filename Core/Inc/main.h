@@ -16,8 +16,8 @@ void Error_Handler(void);
 /* GPIO definitions*/
 #define STATUS_LED1_Pin GPIO_PIN_0
 #define STATUS_LED1_GPIO_Port GPIOF
-#define STAUS_LED2_Pin GPIO_PIN_1
-#define STAUS_LED2_GPIO_Port GPIOF
+#define STATUS_LED2_Pin GPIO_PIN_1
+#define STATUS_LED2_GPIO_Port GPIOF
 #define VENTOLA_Pin GPIO_PIN_5
 #define VENTOLA_GPIO_Port GPIOA
 #define BUTTON_Pin GPIO_PIN_2
