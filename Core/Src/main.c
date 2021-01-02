@@ -1,5 +1,4 @@
 #include "main.h"
-#include <adc.h>
 
 /* Variabili esportate*/
 ADC_HandleTypeDef hadc;
@@ -27,37 +26,35 @@ uint16_t getMode(void);
 float average(uint16_t *array,uint16_t t);
 void SENSOR_Warmup(uint16_t short_n);
 void VENTOLA_run(uint32_t delay);
-float ADC_AVERAGE_Value(uint32_t delta_sampling,uint16_t average_sample);
+float ADC_AVERAGE_Value(uint32_t delta_sampling,uint8_t average_sample);
 void OZONE_Pulse(uint32_t pulse_time);
 
+
+/* Enter in the active mode
+ * 1) Change air in the measure chamber
+ * 2) Wait the sensor stabilization
+ * 3) Sample Ozone concentration (averaging)
+ * 4) Generate a ozone pulse that depends on the selected status
+ * 5) repeat from 1)
+ */
 int main(void)
 {
-	/* Enter in status Warmup
-	 * Initialization of the hardware
-	 */
 	HAL_Init();
 	SystemClock_Config();
 	MX_GPIO_Init();
 	MX_ADC_Init();
 	MX_TIM3_Init();
 	OZONATOR_Init();
-	SENSOR_Warmup(SHORT_N);
 
-	/* Enter in the active mode
-	 * 1) Change air in the measure chamber
-	 * 2) Wait the sensor stabilization
-	 * 3) Sample Ozone concentration (averaging)
-	 * 4) Generate a ozone pulse that depends on the selected status
-	 * 5) repeat from 1)
-	 */
+	SENSOR_Warmup(SHORT_N);
 
 	while(1){
 		VENTOLA_run(VENTOLA_TIME); // Avvia la ventola della camera di misura per VENTOLA_TIME ms
+
 		HAL_Delay(STABILIZATION_TIME); // Attendi STABILIZATION_TIME ms prima di leggere
+
 		if(ADC_AVERAGE_Value(DELTA_SAMPLING,AVERAGE_SAMPLE) < OZONE_THR) { // se non c'e' sufficiente Ozono
 			OZONE_Pulse(getMode()); // attiva generatore per un tempo determinato dallo stato del sistema
-		} else {
-			HAL_Delay(getMode()); // la concentrazione e' superiore al setpoint. Non rilascia ozono
 		}
 	}
 }
@@ -144,7 +141,7 @@ void VENTOLA_run(uint32_t delay){
 	HAL_GPIO_WritePin(VENTOLA_GPIO_Port,VENTOLA_Pin,0);
 }
 
-float ADC_AVERAGE_Value(uint32_t delta_sampling,uint16_t average_sample) {
+float ADC_AVERAGE_Value(uint32_t delta_sampling,uint8_t average_sample) {
 	uint8_t i=0;
 	uint16_t adc_value[average_sample];
 	float avg;
@@ -158,8 +155,8 @@ float ADC_AVERAGE_Value(uint32_t delta_sampling,uint16_t average_sample) {
 			HAL_ADC_Start_IT(&hadc);
 		}
 	}
-	HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,0);
 	avg=average(adc_value,average_sample);
+	HAL_GPIO_WritePin(STATUS_LED1_GPIO_Port,STATUS_LED1_Pin,0);
 	return(avg);
 }
 
@@ -255,13 +252,11 @@ static void MX_TIM3_Init(void)
 	TIM_MasterConfigTypeDef sMasterConfig = {0};
 	TIM_OC_InitTypeDef sConfigOC = {0};
 
-	/* USER CODE BEGIN TIM3_Init 1 */
 
-	/* USER CODE END TIM3_Init 1 */
 	htim3.Instance = TIM3;
 	htim3.Init.Prescaler = 8000-1;
 	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim3.Init.Period = 2000;
+	htim3.Init.Period = 2000-1;
 	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 	if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -284,7 +279,7 @@ static void MX_TIM3_Init(void)
 		Error_Handler();
 	}
 	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = 500;
+	sConfigOC.Pulse = 0;
 	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
 	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 	if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
