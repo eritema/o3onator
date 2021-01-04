@@ -42,7 +42,7 @@ void Error_Handler(void);
 #define VREFINT_CAL ((uint16_t*) VREFINT_CAL_ADDR)
 #define VREFINT_CAL_B ((uint16_t*) VREFINT_CAL_ADDR_B)
 #define VREFINT 1.2
-#define OZONE_THR 2500
+#define OZONE_THR 2560
 #define DELTA_SAMPLING 333 // intervallo tra i campionamenti
 
 // Conditional compile directives
