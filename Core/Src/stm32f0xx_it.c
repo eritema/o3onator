@@ -36,7 +36,6 @@ enum O3_VALUES{
 enum STATI_RELE ventola,ozono;
 enum STATI_LED led0;
 
-uint32_t o3;
 int counting=0;
 
 

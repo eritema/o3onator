@@ -53,7 +53,7 @@ int main(void)
 
 		HAL_Delay(STABILIZATION_TIME); // Attendi STABILIZATION_TIME ms prima di leggere
 
-		if(ADC_AVERAGE_Value(DELTA_SAMPLING,AVERAGE_SAMPLE) < OZONE_THR) { // se non c'e' sufficiente Ozono
+		if(ADC_AVERAGE_Value(DELTA_SAMPLING,AVERAGE_SAMPLE) < OZONE_THR && mode > 0) { // se non c'e' sufficiente Ozono
 			OZONE_Pulse(getMode()); // attiva generatore per un tempo determinato dallo stato del sistema
 		}
 	}
@@ -327,7 +327,7 @@ static void MX_GPIO_Init(void)
 
 	/*Configure GPIO pin : BUTTON_Pin */
 	GPIO_InitStruct.Pin = BUTTON_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(BUTTON_GPIO_Port, &GPIO_InitStruct);
 

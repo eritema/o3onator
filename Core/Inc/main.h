@@ -50,24 +50,23 @@ void Error_Handler(void);
 
 // The power is a battery (DC, low Noise) or other (high noise)
 #if POWER == AC
-
 #define CALIBRATION_TIME 5000
 #define ERRORS_ADC 3000
-#define DELTA 50
-#define SHORT_N 16 // Numero di samples ADC
+#define DELTA 5
+#define SHORT_N 16 // Numero di samples ADC in warmup
 #define VENTOLA_TIME 10000
 #define STABILIZATION_TIME 30000
-#define AVERAGE_SAMPLE 30
+#define AVERAGE_SAMPLE 30 // 30 * DELTA_SAMPLING
 
 #else
-#define CALIBRATION_TIME 180000
-#define ERRORS_ADC 10000
-#define DELTA 5
-#define LONG_N 128 // Numero di samples
-#define SHORT_N 64
+#define CALIBRATION_TIME 600000 // Dai 10 min per la stabilizzazione
+#define ERRORS_ADC 10000  // Intervallo senza errori
+#define DELTA 50 // c'e' distrurbo di rete
+#define LONG_N 128 // rimuovere
+#define SHORT_N 64 // Numero di samples ADC in warmup
 #define VENTOLA_TIME 10000
 #define STABILIZATION_TIME 10000
-#define AVERAGE_SAMPLE 120
+#define AVERAGE_SAMPLE 120 // 120 * DELTA_SAMPLING
 
 #endif
 
