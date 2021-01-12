@@ -17,24 +17,12 @@ extern int errors;
 
 int GO_BOTTONE=1;
 
-enum STATI_LED{
-	ON_LED=1,
-	OFF_LED=0
-};
-
-enum STATI_RELE{
-	ON=0,
-	OFF=1
-};
-
 enum O3_VALUES{
+	O3_ULOW=250,
 	O3_LOW=500,
 	O3_MED=1000,
 	O3_HI=2000
 };
-
-enum STATI_RELE ventola,ozono;
-enum STATI_LED led0;
 
 int counting=0;
 
@@ -83,17 +71,20 @@ void TIM3_IRQHandler(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if (GPIO_Pin==BUTTON_Pin && calibrated) {
-	  if(mode>=3) mode=0;
+	  if(mode>=4) mode=0;
 	  else mode++;
 	  if(mode>0) {
 		  	  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 	  		  if(mode==1) {
-	  			htim3.Instance -> CCR1 = O3_LOW;
+	  			htim3.Instance -> CCR1 = O3_ULOW;
 	  			counting=1;
 	  		  } else if(mode==2) {
-	  			  htim3.Instance -> CCR1 = O3_MED;
+	  			  htim3.Instance -> CCR1 = O3_LOW;
 	  			  counting=1;
 	  		  } else if(mode==3) {
+	  			  htim3.Instance -> CCR1 = O3_MED;
+	  			  counting=1;
+	  		  } else if(mode==4) {
 	  			  htim3.Instance -> CCR1 = O3_HI;
 	  			  counting=1;
 	  		  }

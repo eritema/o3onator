@@ -71,16 +71,14 @@ uint16_t getMode() {
 	switch(mode) {
 	case 0:
 		return(0);
-		break;
 	case 1:
 		return(500);
-		break;
 	case 2:
 		return(1000);
-		break;
 	case 3:
 		return(2000);
-		break;
+	case 4:
+			return(4000);
 	default:
 		return(0);
 	}
